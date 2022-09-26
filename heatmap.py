@@ -6,14 +6,19 @@ import torch.nn.functional as F
 
 class heatmap():
     def __init__(self, model, scans, index=0):
-        self.pred = model(torch.tensor(np.expand_dims(scans[index], axis=0), dtype=torch.float32))
-        self.last_layer_output = model.last_layer_output
-        
-        print("Prediction: ", self.pred)
+        self.model = model
+        self.model.eval()
+        self.scans = scans
+        self.index = index
         
     def GradCAM(self):
-        grads = autograd.grad(self.pred[:, self.pred.argmax().item()], self.last_layer_output)
-        last_layer_output = np.squeeze(self.last_layer_output)
+        pred = self.model(torch.tensor(np.expand_dims(self.scans[self.index], axis=0), dtype=torch.float32))
+        print("Prediction: ", pred)
+        
+        last_layer_output = self.model.last_layer_output
+        grads = autograd.grad(pred[:, pred.argmax().item()], last_layer_output)
+        
+        last_layer_output = np.squeeze(last_layer_output)
         last_layer_output = last_layer_output.detach().numpy()
         grads = grads[0][0].mean((1,2,3))
         grads = grads.detach().numpy()
@@ -27,8 +32,13 @@ class heatmap():
         return heatmap
     
     def HiResCAM(self):
-        grads = autograd.grad(self.pred[:, self.pred.argmax().item()], self.last_layer_output)
-        last_layer_output = np.squeeze(self.last_layer_output)
+        pred = self.model(torch.tensor(np.expand_dims(self.scans[self.index], axis=0), dtype=torch.float32))
+        print("Prediction: ", pred)
+        
+        last_layer_output = self.model.last_layer_output
+        grads = autograd.grad(pred[:, pred.argmax().item()], last_layer_output)
+        
+        last_layer_output = np.squeeze(last_layer_output)
         last_layer_output = last_layer_output.detach().numpy()
         grads = grads[0][0]
         grads = grads.detach().numpy()
